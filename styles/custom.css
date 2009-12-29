@@ -1,0 +1,26 @@
+.ors_rose li {
+	color: #CC6666;
+}
+
+.ors_rose li a{
+	font-weight:bold;
+	color: #CC0000;
+}
+
+
+.ors_japan li {
+	color: #CCCC00;
+}
+
+.ors_japan li a{
+	color: #999900;
+}
+
+.ors_ocean li {
+	color:#3399CC;
+}
+
+.ors_ocean li a{
+	color:#333399;
+	background-color:#CCCCFF;
+}
