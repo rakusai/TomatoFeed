@@ -63,8 +63,8 @@ class Option(object):
 		self.mc = request.get('mc',self.mc)
 		self.st = request.get('st',self.st)
 		self.tm = request.get('tm',self.tm)	
-	
-		
+		if not self.mc.isdigit():
+			self.mc = "5"
 	
 def parse_feed(feed_url):
 	#Responseオブジェクトを取得
@@ -125,9 +125,8 @@ class Jsout(webapp.RequestHandler):
 	def get(self):
 		#Find existing feed
 		query = Feed.all().order('-date').filter('uri =', self.request.get('uri'))
-		feeds = query.fetch(1)
-		if feeds:
-			feed = feeds[0]
+		feed = query.get()
+		if feed:
 			rss = feed.parse()
 			if not feed.cached:
 				feed.put()
@@ -170,6 +169,7 @@ class Jsout(webapp.RequestHandler):
 		
 		template_values = {
 			"SITE_NAME":"Tomato Feed",
+			"APP_URI":"http://"+os.environ['SERVER_NAME'],
 			"cached" : feed.cached,
 			"rss_uri" : feed.uri,
 			"option" : option,
