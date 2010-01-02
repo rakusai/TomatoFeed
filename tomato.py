@@ -124,7 +124,7 @@ class Jsout(webapp.RequestHandler):
 
 	def get(self):
 		#Find existing feed
-		query = Feed.all().order('-date').filter('uri =', self.request.get('uri'))
+		query = Feed.all().filter('uri =', self.request.get('uri'))
 		feed = query.get()
 		if feed:
 			rss = feed.parse()
