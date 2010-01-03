@@ -11,6 +11,7 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
 from google.appengine.ext import db
 from google.appengine.api import urlfetch
+from google.appengine.api import memcache
 import feedparser
 import dateutil
 from dateutil.parser import parse
@@ -26,31 +27,53 @@ class Feed(db.Model):
 	error  = db.StringProperty()
 	content = db.TextProperty()
 	date = db.DateTimeProperty(auto_now=True, auto_now_add=True)
-	diffmin = ""
-	cached = False
-	def parse(self):
-		#get from cache or not?
-		difftime = datetime.datetime.now() - self.date
-		if difftime.seconds < 20*60 and self.content:
-			self.cached = True
-			return feedparser.parse(self.content.encode("utf-8"))
+
+	def cache_expired(self):
+		data = memcache.get("cached:" + self.uri)
+		if not data:
+			memcache.add("cached:" + self.uri, "OK", 60*20)
+			return True
 		else:
-			try:
-				result = urlfetch.fetch(self.uri.encode("utf-8"))
-			except:
-				self.error = "Can't Fetch"
-				return None;
-			if result.status_code != 200:
-				self.error = "Can't Fetch (" + result.status_code+")"
-				return None;
+			return False
+		#get from cache or not?
+		#difftime = datetime.datetime.now() - self.date
+		#if difftime.seconds > 20*60 and self.content:
+		#	return True
+		#else:
+		#	return False
+			
+	def parse(self):
+
+		return feedparser.parse(self.content.encode("utf-8"))
+		
+	def fetch(self):
+		try:
+			result = urlfetch.fetch(self.uri.encode("utf-8"))
+		except:
+			self.error = "Can't Fetch"
+			return None;
+		if result.status_code != 200:
+			self.error = "Can't Fetch (" + result.status_code+")"
+			return None;
+		try:
 			rss = feedparser.parse(result.content)
-			if rss.bozo == 1:
-				self.error = "Can't Parse"
-				return rss;
-			self.error = ""
-			self.title = rss.channel.title
-			self.content = result.content.decode("utf-8")
+		except:
+			self.error = "Wrong RSS Format"
+			return None;
+			
+		if rss.bozo == 1:
+			self.error = "Wrong RSS Format"
 			return rss;
+		self.error = ""
+		self.title = rss.channel.title
+		self.content = result.content.decode("utf-8")
+		return rss;
+			
+class CrawlQue(db.Model):
+	uri = db.StringProperty()
+	error  = db.StringProperty()
+	date = db.DateTimeProperty(auto_now=True, auto_now_add=True)
+
 			
 class Option(object):
 	cs = "def"
@@ -127,13 +150,17 @@ class Jsout(webapp.RequestHandler):
 		query = Feed.all().filter('uri =', self.request.get('uri'))
 		feed = query.get()
 		if feed:
+			#existing feed
 			rss = feed.parse()
-			if not feed.cached:
-				feed.put()
+			if feed.cache_expired():
+				que = CrawlQue()
+				que.uri = feed.uri
+				que.put()
 		else:
+			#new feed
 			feed = Feed()
 			feed.uri = self.request.get('uri')
-			rss = feed.parse()
+			rss = feed.fetch()
 			if not feed.error:
 				feed.put()
 		
@@ -170,7 +197,6 @@ class Jsout(webapp.RequestHandler):
 		template_values = {
 			"SITE_NAME":"Tomato Feed",
 			"APP_URI":"http://"+os.environ['SERVER_NAME'],
-			"cached" : feed.cached,
 			"rss_uri" : feed.uri,
 			"option" : option,
 			"entries" : rss.entries,
@@ -180,6 +206,28 @@ class Jsout(webapp.RequestHandler):
 		self.response.headers["Content-Type"] = "application/x-javascript;charset=utf-8;"
 		path = os.path.join(os.path.dirname(__file__), 'views/list.js')
 		self.response.out.write(template.render(path, template_values))
+
+class Crawl(webapp.RequestHandler):
+
+	def get(self):
+		#Find existing feed
+		self.response.headers["Content-Type"] = "text/plain;charset=utf-8;"
+
+		query = CrawlQue.all().order('date')
+		ques = query.fetch(20)
+		if ques:
+			for que in ques:
+				query = Feed.all().filter('uri =', que.uri)
+				feed = query.get()
+				if feed:
+					feed.fetch()
+					feed.put()
+				
+				db.delete(que)
+				self.response.out.write(u"Fetched:%s\n" % que.uri)
+
+		self.response.out.write('OK\n')
+
 	
 class Custom(webapp.RequestHandler):
 	def get(self):
@@ -193,6 +241,7 @@ application = webapp.WSGIApplication(
                                      [('/', MainPage),
                                      ('/feed', FeedPage),
                                      ('/jsout.php', Jsout),
+                                     ('/crawl', Crawl),
                                      ('/custom', Custom)],
                                      debug=True)
 
