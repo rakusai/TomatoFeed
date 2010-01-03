@@ -141,7 +141,7 @@ class FeedPage(webapp.RequestHandler):
 		self.response.out.write(template.render(path, template_values))
 		
 def sorter(a, b):
-	return cmp(a.updated_time, b.updated_time)
+	return cmp(b.updated_time, a.updated_time)
 
 class Jsout(webapp.RequestHandler):
 
@@ -186,9 +186,10 @@ class Jsout(webapp.RequestHandler):
 			if option.tm != "n":
 				entry.updated_format = test.strftime(timef)		
 
+		rss.entries.sort(sorter) 
 		if option.st == "s":
-			rss.entries.sort(sorter) 
-#			rss.entries.reverse()
+			rss.entries.reverse()
+			
 		if option.mc > 0:
 			rss.entries = rss.entries[0:int(option.mc)]
 
