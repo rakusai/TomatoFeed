@@ -147,22 +147,23 @@ class Jsout(webapp.RequestHandler):
 
 	def get(self):
 		#Find existing feed
-		query = Feed.all().filter('uri =', self.request.get('uri'))
-		feed = query.get()
-		if feed:
+		uri = self.request.get('uri')
+		feed = Feed.get_by_key_name(uri)
+		if feed is None:
+			#new feed
+			feed = Feed(key_name=uri)
+			feed.uri = uri
+			rss = feed.fetch()
+			if not feed.error:
+				feed.put()
+		else:
 			#existing feed
 			rss = feed.parse()
 			if feed.cache_expired():
 				que = CrawlQue()
 				que.uri = feed.uri
 				que.put()
-		else:
-			#new feed
-			feed = Feed()
-			feed.uri = self.request.get('uri')
-			rss = feed.fetch()
-			if not feed.error:
-				feed.put()
+		
 		
 		if not rss:
 			self.response.out.write('document.write("<ul><li>Error: '+feed.error+'</li></ul>")')
@@ -218,8 +219,7 @@ class Crawl(webapp.RequestHandler):
 		ques = query.fetch(20)
 		if ques:
 			for que in ques:
-				query = Feed.all().filter('uri =', que.uri)
-				feed = query.get()
+				feed = Feed.get_by_key_name(que.uri)
 				if feed:
 					feed.fetch()
 					feed.put()
