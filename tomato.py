@@ -51,23 +51,23 @@ class Feed(db.Model):
 			result = urlfetch.fetch(self.uri.encode("utf-8"))
 		except:
 			self.error = "Can't Fetch"
-			return None;
+			return None
 		if result.status_code != 200:
 			self.error = "Can't Fetch (" + result.status_code+")"
-			return None;
+			return None
 		try:
 			rss = feedparser.parse(result.content)
 		except:
 			self.error = "Wrong RSS Format"
-			return None;
+			return None
 			
 		if rss.bozo == 1:
 			self.error = "Wrong RSS Format"
-			return rss;
+			return rss
 		self.error = ""
 		self.title = rss.channel.title
 		self.content = result.content.decode("utf-8")
-		return rss;
+		return rss
 			
 class CrawlQue(db.Model):
 	uri = db.StringProperty()
@@ -105,24 +105,24 @@ def parse_feed(feed_url):
 class MainPage(webapp.RequestHandler):
 
     def get(self):
-	feeds_query = Feed.all().order('-date')
-	feeds = feeds_query.fetch(30)
-
-	for feed in feeds:
-		feed.diffmin =  datetime.datetime.now() - feed.date
-		feed.diffmin =  int(feed.diffmin.seconds / 60)
-		
-	template_values = {
-		"SITE_NAME":"Tomato Feed",
-		"SITE_SUBTITLE":"ホームページにブログ記事の新着を表示",
-		'feeds': feeds,
-		'feeds_count': len(feeds),
-	}
-	for feed in feeds:
-		feed.escaped_uri = urllib.quote(feed.uri.encode("utf-8"))	
-
-	path = os.path.join(os.path.dirname(__file__), 'views/home.html')
-	self.response.out.write(template.render(path, template_values))
+		feeds_query = Feed.all().order('-date')
+		feeds = feeds_query.fetch(30)
+	
+		for feed in feeds:
+			feed.diffmin =  datetime.datetime.now() - feed.date
+			feed.diffmin =  int(feed.diffmin.seconds / 60)
+			
+		template_values = {
+			"SITE_NAME":"Tomato Feed",
+			"SITE_SUBTITLE":"ホームページにブログ記事の新着を表示",
+			'feeds': feeds,
+			'feeds_count': len(feeds),
+		}
+		for feed in feeds:
+			feed.escaped_uri = urllib.quote(feed.uri.encode("utf-8"))	
+	
+		path = os.path.join(os.path.dirname(__file__), 'views/home.html')
+		self.response.out.write(template.render(path, template_values))
 	
 class FeedPage(webapp.RequestHandler):
 	def get(self):
