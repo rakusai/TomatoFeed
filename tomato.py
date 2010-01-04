@@ -16,7 +16,13 @@ import feedparser
 import dateutil
 from dateutil.parser import parse
 import urllib
+from google.appengine.api.datastore_errors import Timeout
+from google.appengine.api.labs import taskqueue
 
+#try:
+#  pass
+#except Timeout:
+#  pass
 #import sys
 #sys.setdefaultencoding('utf-8')
 
@@ -68,11 +74,6 @@ class Feed(db.Model):
 		self.title = rss.channel.title
 		self.content = result.content.decode("utf-8")
 		return rss
-			
-class CrawlQue(db.Model):
-	uri = db.StringProperty()
-	error  = db.StringProperty()
-	date = db.DateTimeProperty(auto_now=True, auto_now_add=True)
 
 			
 class Option(object):
@@ -160,10 +161,7 @@ class Jsout(webapp.RequestHandler):
 			#existing feed
 			rss = feed.parse()
 			if feed.cache_expired():
-				que = CrawlQue()
-				que.uri = feed.uri
-				que.put()
-		
+				taskqueue.add(url='/fetch', params={'uri': uri}, method = 'GET')
 		
 		if not rss:
 			self.response.out.write('document.write("<ul><li>Error: '+feed.error+'</li></ul>")')
@@ -208,26 +206,20 @@ class Jsout(webapp.RequestHandler):
 		path = os.path.join(os.path.dirname(__file__), 'views/list.js')
 		self.response.out.write(template.render(path, template_values))
 
-class Crawl(webapp.RequestHandler):
+class FetchFeed(webapp.RequestHandler):
 
 	def get(self):
 		#Find existing feed
+		uri = self.request.get('uri')
 		self.response.headers["Content-Type"] = "text/plain;charset=utf-8;"
 
-		query = CrawlQue.all().order('date')
-		ques = query.fetch(20)
-		if ques:
-			for que in ques:
-				feed = Feed.get_by_key_name(que.uri)
-				if feed:
-					feed.fetch()
-					feed.put()
-				
-				db.delete(que)
-				self.response.out.write(u"Fetched:%s\n" % que.uri)
-
-		self.response.out.write('OK\n')
-
+		feed = Feed.get_by_key_name(uri)
+		if feed:
+			feed.fetch()
+			feed.put()
+			self.response.out.write(u"Fetched:%s\n" % uri)
+		else:
+			self.response.out.write('NG\n')
 	
 class Custom(webapp.RequestHandler):
 	def get(self):
@@ -241,7 +233,7 @@ application = webapp.WSGIApplication(
                                      [('/', MainPage),
                                      ('/feed', FeedPage),
                                      ('/jsout.php', Jsout),
-                                     ('/crawl', Crawl),
+                                     ('/fetch', FetchFeed),
                                      ('/custom', Custom)],
                                      debug=True)
 
