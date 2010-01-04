@@ -1,5 +1,0 @@
-cron:
-- description: RSS crawl job
-  url: /crawl
-  schedule: every 1 minutes
-
