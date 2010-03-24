@@ -72,7 +72,7 @@ class Feed(db.Model):
 			return rss
 		self.error = ""
 		self.title = rss.channel.title
-		self.content = result.content.decode("utf-8")
+		self.content = result.content.decode("utf-8", "ignore")
 		return rss
 
 			
