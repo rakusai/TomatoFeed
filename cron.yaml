@@ -1,0 +1,4 @@
+cron:
+- description: activate
+  url: /activate
+  schedule: every 1 minutes
