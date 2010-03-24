@@ -1,0 +1,18 @@
+{% ifnotequal option.cs "def" %}
+<link href="{{ APP_URI }}/styles/custom.css" rel="stylesheet" type="text/css" />
+{% endifnotequal %}
+<ul class="ors_{{ option.cs }}">
+{% if cached %}
+	<!-- Cached Data -->
+{% endif %}
+
+{% for entry in entries %}
+	<li><a href="{{ entry.link|addslashes }}">{{ entry.title|addslashes }}</a>
+	{%  if entry.updated_format %}({{ entry.updated_format }}){% endif %}
+	</li>
+{% endfor %}
+
+{%  ifequal entries_count 0  %}
+	<li>項目が見つかりません。</li>
+{% endifequal %}
+</ul>

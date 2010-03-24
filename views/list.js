@@ -1,6 +1,8 @@
 function p(t){ document.write(t); }
+{% ifnotequal option.cs "def" %}
 p('<link href="{{ APP_URI }}/styles/custom.css" rel="stylesheet" type="text/css" />');
-p('<ul class="ors_{{ option.cs }}" style="background: url({{ APP_URI }}/images/anim_logo.gif) no-repeat scroll right bottom;">');
+{% endifnotequal %}
+p('<ul class="ors_{{ option.cs }}">');
 
 {% if cached %}
 	/* Cached Data */

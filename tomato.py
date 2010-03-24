@@ -59,7 +59,7 @@ class Feed(db.Model):
 			self.error = "Can't Fetch"
 			return None
 		if result.status_code != 200:
-			self.error = "Can't Fetch (" + result.status_code+")"
+			self.error = "Can't Fetch (%d)" % result.status_code
 			return None
 		try:
 			rss = feedparser.parse(result.content)
@@ -107,8 +107,11 @@ class MainPage(webapp.RequestHandler):
 
     def get(self):
 		feeds_query = Feed.all().order('-date')
-		feeds = feeds_query.fetch(30)
-	
+		try:
+			feeds = feeds_query.fetch(30)
+		except:
+			feeds = feeds_query.fetch(30)
+		
 		for feed in feeds:
 			feed.diffmin =  datetime.datetime.now() - feed.date
 			feed.diffmin =  int(feed.diffmin.seconds / 60)
@@ -149,6 +152,8 @@ class Jsout(webapp.RequestHandler):
 	def get(self):
 		#Find existing feed
 		uri = self.request.get('uri')
+		format = self.request.get('format')
+
 		feed = Feed.get_by_key_name(uri)
 		if feed is None:
 			#new feed
@@ -196,14 +201,17 @@ class Jsout(webapp.RequestHandler):
 		template_values = {
 			"SITE_NAME":"Tomato Feed",
 			"APP_URI":"http://"+os.environ['SERVER_NAME'],
-			"rss_uri" : feed.uri,
+			"rss_uri" : uri,
 			"option" : option,
 			"entries" : rss.entries,
 			'entries_count': len(rss.entries),
 		}
 
-		self.response.headers["Content-Type"] = "application/x-javascript;charset=utf-8;"
-		path = os.path.join(os.path.dirname(__file__), 'views/list.js')
+		if format == 'html':
+			path = os.path.join(os.path.dirname(__file__), 'views/list.html')
+		else:
+			self.response.headers["Content-Type"] = "application/x-javascript;charset=utf-8;"
+			path = os.path.join(os.path.dirname(__file__), 'views/list.js')
 		self.response.out.write(template.render(path, template_values))
 
 class FetchFeed(webapp.RequestHandler):
@@ -220,7 +228,8 @@ class FetchFeed(webapp.RequestHandler):
 			self.response.out.write(u"Fetched:%s\n" % uri)
 		else:
 			self.response.out.write('NG\n')
-	
+			
+		
 class Custom(webapp.RequestHandler):
 	def get(self):
 		template_values = {
@@ -229,11 +238,16 @@ class Custom(webapp.RequestHandler):
 		path = os.path.join(os.path.dirname(__file__), 'views/custom.html')
 		self.response.out.write(template.render(path, template_values))
 
+class Activate(webapp.RequestHandler):
+	def get(self):
+		self.response.out.write("OK")
+
 application = webapp.WSGIApplication(
                                      [('/', MainPage),
                                      ('/feed', FeedPage),
                                      ('/jsout.php', Jsout),
                                      ('/fetch', FetchFeed),
+                                     ('/activate', Activate),
                                      ('/custom', Custom)],
                                      debug=True)
 
