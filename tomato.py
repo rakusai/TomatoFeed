@@ -5,6 +5,7 @@ import sys
 import cgi
 import os
 import datetime
+import pickle
 from google.appengine.ext.webapp import template
 from google.appengine.api import users
 from google.appengine.ext import webapp
@@ -49,8 +50,12 @@ class Feed(db.Model):
 		#	return False
 			
 	def parse(self):
-
-		return feedparser.parse(self.content.encode("utf-8"))
+		
+		try:
+			return pickle.loads(str(self.content))
+		except:
+			return None
+#		return feedparser.parse(self.content.encode("utf-8"))
 		
 	def fetch(self):
 		try:
@@ -61,18 +66,19 @@ class Feed(db.Model):
 		if result.status_code != 200:
 			self.error = "Can't Fetch (%d)" % result.status_code
 			return None
+			
 		try:
 			rss = feedparser.parse(result.content)
 		except:
 			self.error = "Wrong RSS Format"
 			return None
 			
-		if rss.bozo == 1:
+		if not rss or rss.bozo == 1:
 			self.error = "Wrong RSS Format"
 			return rss
 		self.error = ""
 		self.title = rss.channel.title
-		self.content = result.content.decode("utf-8", "ignore")
+		self.content = pickle.dumps(rss).decode("utf-8","ignore") #result.content.decode("utf-8", "ignore")
 		return rss
 
 			
