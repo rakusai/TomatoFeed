@@ -20,6 +20,8 @@ import urllib
 from google.appengine.api.datastore_errors import Timeout
 from google.appengine.api.labs import taskqueue
 
+import re
+
 #try:
 #  pass
 #except Timeout:
@@ -194,7 +196,8 @@ class Jsout(webapp.RequestHandler):
 				timef = '%Y/%m/%d %H:%M'
 			
 			if option.tm != "n":
-				entry.updated_format = test.strftime(timef)		
+				entry.updated_format = test.strftime(timef)	
+			entry.title = re.sub("[\r\n]"," ",entry.title)
 
 		if option.st == "s":
 			rss.entries.sort(sorter) 
