@@ -26,7 +26,7 @@
 	<ul>
     {% for feed in feeds %}
 	<li>
-		<b><a href="./feed?uri={{ feed.escaped_uri }}">{{ feed.title|escape }}</a></b>
+		<b><a href="./feed?uri={{ feed.escaped_uri|safe }}">{{ feed.title }}</a></b>
 		{% if feed.error %}
 		<span class="error">Error: {{ feed.error }}</span>
 		{% endif %}

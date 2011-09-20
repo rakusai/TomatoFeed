@@ -5,67 +5,64 @@ import sys
 import cgi
 import os
 import datetime
-import pickle
+from google.appengine.dist import use_library
+use_library('django', '1.2')
+
 from google.appengine.ext.webapp import template
-from google.appengine.api import users
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
-#from google.appengine.ext import db
 from google.appengine.api import urlfetch
 from google.appengine.api import memcache
+from google.appengine.api import taskqueue
+
 import feedparser
 import dateutil
 from dateutil.parser import parse
 import urllib
-#from google.appengine.api.datastore_errors import Timeout
-from google.appengine.api import taskqueue
 
 import re
 
-#try:
-#  pass
-#except Timeout:
-#  pass
-#import sys
-#sys.setdefaultencoding('utf-8')
-
+class Entry():
+	updated = None
+	title = ""
+	link = ""
 
 class Feed():
 	title = ""
 	uri = ""
 	error  = ""
-	content = ""
+	entries = []
 	date = None
 
 	@staticmethod
 	def get_by_key_name(uri):
-		data = memcache.get("feed:"+uri)
+		data = memcache.get("log:"+uri)
 		if data:
 			feed = Feed()
 			feed.title = data.title
 			feed.uri = data.uri
 			feed.error = data.error
-			feed.content = data.content
+			feed.entries = data.entries
 			return feed
 		else:
 			return None
 		
 	def put(self):
 		self.date = datetime.datetime.now()
-		memcache.set("feed:"+self.uri,self,60*60*24*3)
+		memcache.set("log:"+self.uri,self,60*60*24*3)
 		
 		#直近30にいれる
-		list = memcache.get("list")
+		list = memcache.get("rlist")
 		if not list:
 			list = []
 		if not self in list:
 			list.insert(0,self)
-			memcache.set("list",list[0:30],60*60*24)
+			memcache.set("rlist",list[0:30],60*60*24)
 
 	@staticmethod
 	def get_list():
-		return memcache.get("list")
-		
+		list =  memcache.get("rlist")
+		return list or []
 
 	def cache_expired(self):
 		data = memcache.get("cached:" + self.uri)
@@ -81,13 +78,6 @@ class Feed():
 		#else:
 		#	return False
 			
-	def parse(self):
-		
-		try:
-			return pickle.loads(str(self.content))
-		except:
-			return None
-		
 	def fetch(self):
 		try:
 			result = urlfetch.fetch(self.uri.encode("utf-8"))
@@ -106,11 +96,20 @@ class Feed():
 			
 		if not rss or rss.bozo == 1:
 			self.error = "Wrong RSS Format"
-			return rss
+			return None
+		
+		#URL, タイトル、日付だけ取り出す
 		self.error = ""
 		self.title = rss.channel.title
-		self.content = pickle.dumps(rss).decode("utf-8","ignore") #result.content.decode("utf-8", "ignore")
-		return rss
+		self.entries = []
+		for entry in rss.entries:
+			e = Entry()
+			e.title = entry.title
+			e.link = entry.link
+			e.updated = entry.updated
+			self.entries.append(e)
+			
+		return self
 
 			
 class Option(object):
@@ -126,19 +125,6 @@ class Option(object):
 		self.tm = request.get('tm',self.tm)	
 		if not self.mc.isdigit():
 			self.mc = "5"
-	
-def parse_feed(feed_url):
-	#Responseオブジェクトを取得
-	result = urlfetch.fetch(feed_url)
-	if result.status_code == 200:
-		d = feedparser.parse(result.content)
-	else:
-		raise Exception("Can not retrieve given URL.")
-	#RSSの形式が規格外の場合(bozo=まぬけ)
-	if d.bozo == 1:
-		raise Exception("Can not parse given URL.")
-	return d	
-
 
 class MainPage(webapp.RequestHandler):
 
@@ -188,25 +174,24 @@ class Jsout(webapp.RequestHandler):
 		format = self.request.get('format')
 
 		feed = Feed.get_by_key_name(uri)
-		if feed is None:
+		if not feed:
 			#new feed
 			feed = Feed()
 			feed.uri = uri
-			rss = feed.fetch()
+			feed.fetch()
 			if not feed.error:
 				feed.put()
 		else:
 			#existing feed
-			rss = feed.parse()
 			if feed.cache_expired():
 				taskqueue.add(url='/fetch', params={'uri': uri}, method = 'GET')
 		
-		if not rss:
+		if not feed or feed.error:
 			self.response.out.write('document.write("<ul><li>Error: '+feed.error+'</li></ul>")')
 			return
 		
 		option = Option(self.request)
-		for entry in rss.entries:
+		for entry in feed.entries:
 			try:
 				test = parse(entry.updated)
 			except:
@@ -225,10 +210,10 @@ class Jsout(webapp.RequestHandler):
 			entry.title = re.sub("[\r\n]"," ",entry.title)
 
 		if option.st == "s":
-			rss.entries.sort(sorter) 
+			feed.entries.sort(sorter) 
 			
 		if option.mc > 0:
-			rss.entries = rss.entries[0:int(option.mc)]
+			feed.entries = feed.entries[0:int(option.mc)]
 
 		
 		
@@ -237,8 +222,8 @@ class Jsout(webapp.RequestHandler):
 			"APP_URI":"http://"+os.environ['SERVER_NAME'],
 			"rss_uri" : uri,
 			"option" : option,
-			"entries" : rss.entries,
-			'entries_count': len(rss.entries),
+			"entries" : feed.entries,
+			'entries_count': len(feed.entries),
 		}
 
 		if format == 'html':
