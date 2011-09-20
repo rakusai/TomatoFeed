@@ -10,15 +10,15 @@ from google.appengine.ext.webapp import template
 from google.appengine.api import users
 from google.appengine.ext import webapp
 from google.appengine.ext.webapp.util import run_wsgi_app
-from google.appengine.ext import db
+#from google.appengine.ext import db
 from google.appengine.api import urlfetch
 from google.appengine.api import memcache
 import feedparser
 import dateutil
 from dateutil.parser import parse
 import urllib
-from google.appengine.api.datastore_errors import Timeout
-from google.appengine.api.labs import taskqueue
+#from google.appengine.api.datastore_errors import Timeout
+from google.appengine.api import taskqueue
 
 import re
 
@@ -30,12 +30,42 @@ import re
 #sys.setdefaultencoding('utf-8')
 
 
-class Feed(db.Model):
-	title = db.StringProperty()
-	uri = db.StringProperty()
-	error  = db.StringProperty()
-	content = db.TextProperty()
-	date = db.DateTimeProperty(auto_now=True, auto_now_add=True)
+class Feed():
+	title = ""
+	uri = ""
+	error  = ""
+	content = ""
+	date = None
+
+	@staticmethod
+	def get_by_key_name(uri):
+		data = memcache.get("feed:"+uri)
+		if data:
+			feed = Feed()
+			feed.title = data.title
+			feed.uri = data.uri
+			feed.error = data.error
+			feed.content = data.content
+			return feed
+		else:
+			return None
+		
+	def put(self):
+		self.date = datetime.datetime.now()
+		memcache.set("feed:"+self.uri,self,60*60*24*3)
+		
+		#直近30にいれる
+		list = memcache.get("list")
+		if not list:
+			list = []
+		if not self in list:
+			list.insert(0,self)
+			memcache.set("list",list[0:30],60*60*24)
+
+	@staticmethod
+	def get_list():
+		return memcache.get("list")
+		
 
 	def cache_expired(self):
 		data = memcache.get("cached:" + self.uri)
@@ -57,7 +87,6 @@ class Feed(db.Model):
 			return pickle.loads(str(self.content))
 		except:
 			return None
-#		return feedparser.parse(self.content.encode("utf-8"))
 		
 	def fetch(self):
 		try:
@@ -114,15 +143,13 @@ def parse_feed(feed_url):
 class MainPage(webapp.RequestHandler):
 
     def get(self):
-		feeds_query = Feed.all().order('-date')
-		try:
-			feeds = feeds_query.fetch(30)
-		except:
-			feeds = feeds_query.fetch(30)
+		feeds = Feed.get_list()
 		
 		for feed in feeds:
-			feed.diffmin =  datetime.datetime.now() - feed.date
-			feed.diffmin =  int(feed.diffmin.seconds / 60)
+			if feed.date:
+				feed.diffmin =  datetime.datetime.now() - feed.date
+				feed.diffmin =  int(feed.diffmin.seconds / 60)
+			feed.escaped_uri = urllib.quote(feed.uri.encode("utf-8"))	
 			
 		template_values = {
 			"SITE_NAME":"Tomato Feed",
@@ -130,8 +157,6 @@ class MainPage(webapp.RequestHandler):
 			'feeds': feeds,
 			'feeds_count': len(feeds),
 		}
-		for feed in feeds:
-			feed.escaped_uri = urllib.quote(feed.uri.encode("utf-8"))	
 	
 		path = os.path.join(os.path.dirname(__file__), 'views/home.html')
 		self.response.out.write(template.render(path, template_values))
@@ -165,7 +190,7 @@ class Jsout(webapp.RequestHandler):
 		feed = Feed.get_by_key_name(uri)
 		if feed is None:
 			#new feed
-			feed = Feed(key_name=uri)
+			feed = Feed()
 			feed.uri = uri
 			rss = feed.fetch()
 			if not feed.error:
@@ -247,16 +272,11 @@ class Custom(webapp.RequestHandler):
 		path = os.path.join(os.path.dirname(__file__), 'views/custom.html')
 		self.response.out.write(template.render(path, template_values))
 
-class Activate(webapp.RequestHandler):
-	def get(self):
-		self.response.out.write("OK")
-
 application = webapp.WSGIApplication(
                                      [('/', MainPage),
                                      ('/feed', FeedPage),
                                      ('/jsout.php', Jsout),
                                      ('/fetch', FetchFeed),
-                                     ('/activate', Activate),
                                      ('/custom', Custom)],
                                      debug=True)
 

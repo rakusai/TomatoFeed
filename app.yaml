@@ -2,7 +2,7 @@
 application: tomato--feed
 
 # アプリケーションのバージョン
-version: 1
+version: 1-2
 
 # ランタイムの名称。現時点では「python」のみ
 runtime: python
