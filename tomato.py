@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import webapp2
+
 import sys
 
 import cgi
 import os
 import datetime
-from google.appengine.dist import use_library
-use_library('django', '1.2')
 
 from google.appengine.ext.webapp import template
 from google.appengine.ext import webapp
@@ -46,11 +46,11 @@ class Feed():
 			return feed
 		else:
 			return None
-		
+
 	def put(self):
 		self.date = datetime.datetime.now()
 		memcache.set("log:"+self.uri,self,60*60*24*3)
-		
+
 		#直近30にいれる
 		list = memcache.get("rlist")
 		if not list:
@@ -77,7 +77,7 @@ class Feed():
 		#	return True
 		#else:
 		#	return False
-			
+
 	def fetch(self):
 		try:
 			result = urlfetch.fetch(self.uri.encode("utf-8"))
@@ -87,17 +87,17 @@ class Feed():
 		if result.status_code != 200:
 			self.error = "Can't Fetch (%d)" % result.status_code
 			return None
-			
+
 		try:
 			rss = feedparser.parse(result.content)
 		except:
 			self.error = "Wrong RSS Format"
 			return None
-			
+
 		if not rss or rss.bozo == 1:
 			self.error = "Wrong RSS Format"
 			return None
-		
+
 		#URL, タイトル、日付だけ取り出す
 		self.error = ""
 		self.title = rss.channel.title
@@ -108,21 +108,21 @@ class Feed():
 			e.link = entry.link
 			e.updated = entry.updated
 			self.entries.append(e)
-			
+
 		return self
 
-			
+
 class Option(object):
 	cs = "def"
 	mc = "5"
 	st = "d"
 	tm = "s"
-	
+
 	def __init__(self, request):
 		self.cs = request.get('cs',self.cs)
 		self.mc = request.get('mc',self.mc)
 		self.st = request.get('st',self.st)
-		self.tm = request.get('tm',self.tm)	
+		self.tm = request.get('tm',self.tm)
 		if not self.mc.isdigit():
 			self.mc = "5"
 
@@ -130,23 +130,23 @@ class MainPage(webapp.RequestHandler):
 
     def get(self):
 		feeds = Feed.get_list()
-		
+
 		for feed in feeds:
 			if feed.date:
 				feed.diffmin =  datetime.datetime.now() - feed.date
 				feed.diffmin =  int(feed.diffmin.seconds / 60)
-			feed.escaped_uri = urllib.quote(feed.uri.encode("utf-8"))	
-			
+			feed.escaped_uri = urllib.quote(feed.uri.encode("utf-8"))
+
 		template_values = {
 			"SITE_NAME":"Tomato Feed",
 			"SITE_SUBTITLE":"ホームページにブログ記事の新着を表示",
 			'feeds': feeds,
 			'feeds_count': len(feeds),
 		}
-	
+
 		path = os.path.join(os.path.dirname(__file__), 'views/home.html')
 		self.response.out.write(template.render(path, template_values))
-	
+
 class FeedPage(webapp.RequestHandler):
 	def get(self):
 		feeduri = self.request.get('uri')
@@ -162,7 +162,7 @@ class FeedPage(webapp.RequestHandler):
 		}
 		path = os.path.join(os.path.dirname(__file__), 'views/detail.html')
 		self.response.out.write(template.render(path, template_values))
-		
+
 def sorter(a, b):
 	return cmp(a.updated_time, b.updated_time)
 
@@ -185,11 +185,11 @@ class Jsout(webapp.RequestHandler):
 			#existing feed
 			if feed.cache_expired():
 				taskqueue.add(url='/fetch', params={'uri': uri}, method = 'GET')
-		
+
 		if not feed or feed.error:
 			self.response.out.write('document.write("<ul><li>Error: '+feed.error+'</li></ul>")')
 			return
-		
+
 		option = Option(self.request)
 		for entry in feed.entries:
 			try:
@@ -204,19 +204,19 @@ class Jsout(webapp.RequestHandler):
 				timef = '%Y/%m/%d'
 			elif option.tm == "l":
 				timef = '%Y/%m/%d %H:%M'
-			
+
 			if option.tm != "n":
-				entry.updated_format = test.strftime(timef)	
+				entry.updated_format = test.strftime(timef)
 			entry.title = re.sub("[\r\n]"," ",entry.title)
 
 		if option.st == "s":
-			feed.entries.sort(sorter) 
-			
+			feed.entries.sort(sorter)
+
 		if option.mc > 0:
 			feed.entries = feed.entries[0:int(option.mc)]
 
-		
-		
+
+
 		template_values = {
 			"SITE_NAME":"Tomato Feed",
 			"APP_URI":"http://"+os.environ['SERVER_NAME'],
@@ -247,8 +247,7 @@ class FetchFeed(webapp.RequestHandler):
 			self.response.out.write(u"Fetched:%s\n" % uri)
 		else:
 			self.response.out.write('NG\n')
-			
-		
+
 class Custom(webapp.RequestHandler):
 	def get(self):
 		template_values = {
@@ -257,16 +256,16 @@ class Custom(webapp.RequestHandler):
 		path = os.path.join(os.path.dirname(__file__), 'views/custom.html')
 		self.response.out.write(template.render(path, template_values))
 
-application = webapp.WSGIApplication(
-                                     [('/', MainPage),
-                                     ('/feed', FeedPage),
-                                     ('/jsout.php', Jsout),
-                                     ('/fetch', FetchFeed),
-                                     ('/custom', Custom)],
-                                     debug=True)
-
+app = webapp2.WSGIApplication([('/', MainPage),
+                               ('/feed', FeedPage),
+                               ('/jsout.php', Jsout),
+                               ('/fetch', FetchFeed),
+                               ('/custom', Custom)],
+                               debug=True)
+'''
 def main():
   run_wsgi_app(application)
 
 if __name__ == "__main__":
   main()
+'''
