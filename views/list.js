@@ -5,20 +5,20 @@ p('<link href="{{ APP_URI }}/styles/custom.css" rel="stylesheet" type="text/css"
 p('<ul class="ors_{{ option.cs }}">');
 
 {% if cached %}
-	/* Cached Data */
+  /* Cached Data */
 {% endif %}
 
 {% for entry in entries %}
-	p('<li><a href="{{ entry.link|addslashes }}">{{ entry.title|addslashes }}</a>');
-	{%  if entry.updated_format %}
-		p(' ({{ entry.updated_format }})');
-	{% endif %}
-	p('</li>');
+  p('<li><a href="{{ entry.link|addslashes }}">{{ entry.title|addslashes }}</a>');
+  {%  if entry.updated_format %}
+    p(' ({{ entry.updated_format }})');
+  {% endif %}
+  p('</li>');
 
 {% endfor %}
 
 {%  ifequal entries_count 0  %}
-	p('<li>項目が見つかりません。</li>');
+  p('<li>項目が見つかりません。</li>');
 {% endifequal %}
 
 p('</ul>');

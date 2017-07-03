@@ -1,48 +1,52 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!DOCTYPE html>
+<html>
 <head>
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-	<title>{{ SITE_NAME }}: {{ SITE_SUBTITLE }}</title>
-	<link href="styles/openrss.css" rel="stylesheet" type="text/css" />
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>{{ SITE_NAME }}: {{ SITE_SUBTITLE }}</title>
+  <link href="styles/openrss.css" rel="stylesheet" type="text/css" />
 </head>
 <body onload="document.addform.uri.focus()">
 <h1><a href="./">{{ SITE_NAME }}</a></h1>
 <div class="content">
 <!--トップページ-->
-	<div align="center">
-	<p>Tomato Feedを使えば、最新のブログ記事やRSSフィードを<br />
-			あなたのホームページの一部に自動で表示させることができます。</p>
-	<p>使い方は、とっても簡単。<br />
-			ブログのRSSのURLを入力して、読み込みボタンを押しください。</p>
-	<form action="./feed" method="get" name="addform" id="addform">
-			RSSのURL
-			<input name="uri" type="text" id="uri" size="40" />
-			<input type="submit" value="読み込み" />
-	</form>
-	</div>
-	<h3 align="center">&nbsp;</h3>
-	<h3 align="center"><img src="images/tobira.gif" alt="ブログの最新エントリーをあなたのウェブサイトに自動表示！" width="532" height="211" /></h3>
-	<h3>最近更新されたRSS（{{ feeds_count }}件）：</h3>
-	<ul>
+  <div align="center">
+  <p>Tomato Feedを使えば、最新のブログ記事やRSSフィードを<br />
+    あなたのホームページの一部に自動で表示させることができます。</p>
+  <p>使い方は、とっても簡単。<br />
+    ブログのRSSのURLを入力して、読み込みボタンを押しください。</p>
+  <form action="./feed" method="get" name="addform" id="addform">
+    RSSのURL
+    <input name="uri" type="text" id="uri" size="40" />
+    <input type="submit" value="読み込み" />
+  </form>
+  </div>
+  <h3 align="center">&nbsp;</h3>
+  <h3 align="center"><img src="images/tobira.gif" alt="ブログの最新エントリーをあなたのウェブサイトに自動表示！" width="532" height="211" /></h3>
+  <h3>最近更新されたRSS（{{ feeds_count }}件）：</h3>
+  <ul>
     {% for feed in feeds %}
-	<li>
-		<b><a href="./feed?uri={{ feed.escaped_uri|safe }}">{{ feed.title }}</a></b>
-		{% if feed.error %}
-		<span class="error">Error: {{ feed.error }}</span>
-		{% endif %}
-		<br>
-		
-		<span class="uri">{{ feed.uri }}</span>
-		<span class="date">Updated: {{ feed.diffmin }} min. ago</span>
-	</li>
-    {% endfor %}
-	</ul>
+  <li>
+    <b><a href="./feed?uri={{ feed.escaped_uri|safe }}">{{ feed.title }}</a></b>
+    {% if feed.error %}
+    <span class="error">Error: {{ feed.error }}</span>
+    {% endif %}
+    <br>
 
+    <span class="uri">{{ feed.uri }}</span>
+    <span class="date">Updated: {{ feed.diffmin }} min. ago</span>
+  </li>
+    {% endfor %}
+  </ul>
 </div>
 <div class="footer">
-<p>{{ SITE_NAME }}  &copy;  <a href="http://rakusai.org">Isshu Rakusai</a></p>
-<p style="color:#666">Tomato Feedは、クラウドアプリケーションプラットフォーム <a href="http://code.google.com/intl/ja/appengine/">Google App Engine</a>上で動作しています。<br />
-Googleのクラウド技術により非常に安定して動作します。</p>
+  <p>{{ SITE_NAME }}  &copy;
+  <a href="http://rakusai.org">Isshu Rakusai</a>
+  </p>
+  <p style="color:#666">
+  Tomato Feedは、クラウドアプリケーションプラットフォーム
+  <a href="https://cloud.google.com/appengine/">Google App Engine</a>上で動作しています。<br />
+  Googleのクラウド技術により非常に安定して動作します。
+  </p>
 </div>
 </body>
 </html>
