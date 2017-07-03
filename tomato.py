@@ -127,8 +127,7 @@ class Option(object):
       self.mc = "5"
 
 class MainPage(webapp.RequestHandler):
-
-    def get(self):
+  def get(self):
     feeds = Feed.get_list()
 
     for feed in feeds:
