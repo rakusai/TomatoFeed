@@ -11,7 +11,7 @@ p('<ul class="ors_{{ option.cs }}">');
 {% for entry in entries %}
   p('<li><a href="{{ entry.link|addslashes }}">{{ entry.title|addslashes }}</a>');
   {%  if entry.updated_format %}
-    p(' ({{ entry.updated_format }})');
+    p(' <span>{{ entry.updated_format }}</span>');
   {% endif %}
   p('</li>');
 
