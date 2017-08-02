@@ -190,22 +190,30 @@ class Jsout(webapp.RequestHandler):
       return
 
     option = Option(self.request)
-    for entry in feed.entries:
-      try:
-        test = parse(entry.updated)
-      except:
-        test = datetime.datetime.now()
-      entry.updated_time = test.strftime('%Y/%m/%d %H:%M:%s')
+
+    def get_updated_format(parsed_time):
+      if option.tm == "n":
+        return ''
+
       timef = ""
       if option.tm == "s":
-        timef = '%m/%d'
+        timef = '(%m/%d)'
       elif option.tm == "m":
-        timef = '%Y/%m/%d'
+        timef = '(%Y/%m/%d)'
       elif option.tm == "l":
-        timef = '%Y/%m/%d %H:%M'
+        timef = '(%Y/%m/%d %H:%M)'
+      else:
+        timef = option.tm
 
-      if option.tm != "n":
-        entry.updated_format = test.strftime(timef)
+      return parsed_time.strftime(timef)
+
+    for entry in feed.entries:
+      try:
+        parsed_time = parse(entry_updated)
+      except:
+        parsed_time = datetime.datetime.now()
+      entry.updated_time = parsed_time.strftime('%Y/%m/%d %H:%M:%s')
+      entry.updated_format = get_updated_format(parsed_time)
       entry.title = re.sub("[\r\n]"," ",entry.title)
 
     if option.st == "s":
@@ -214,11 +222,9 @@ class Jsout(webapp.RequestHandler):
     if option.mc > 0:
       feed.entries = feed.entries[0:int(option.mc)]
 
-
-
     template_values = {
       "SITE_NAME":"Tomato Feed",
-      "APP_URI":"http://"+os.environ['SERVER_NAME'],
+      "APP_URI": "http://"+os.environ['HTTP_HOST'],
       "rss_uri" : uri,
       "option" : option,
       "entries" : feed.entries,
