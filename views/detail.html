@@ -23,80 +23,77 @@ function onLoad()
   selectIndexByValue('st','{{ option.st }}');
   selectIndexByValue('tm','{{ option.tm }}');
 }
-
   </script>
 </head>
 <body onload="onLoad();">
-<h1><a href="./">{{ SITE_NAME }}</a></h1>
-<div class="content">
-<!--RSSの貼り付けページ-->
+  <h1><a href="./">{{ SITE_NAME }}</a></h1>
+  <div class="content">
+    <p>RSSのURL: <a href="{{ rss_uri }}">{{ rss_uri }}</a></p>
+    <p>緑の枠内のコードをあなたのサイトに貼りつけてください。</p>
+    <h3>コード：</h3>
+    <div class="code">&lt;div class=&quot;openrss&quot;&gt;&lt;script type=&quot;text/javascript&quot; src=&quot;{{ js_uri }}&quot; charset=&quot;utf-8&quot; &gt;&lt;/script&gt;&lt;/div&gt;</div>
 
-  <p>RSSのURL: <a href="{{ rss_uri }}">{{ rss_uri }}</a></p>
-  <p>緑の枠内のコードをあなたのサイトに貼りつけてください。</p>
-  <h3>コード：</h3>
-  <div class="code">&lt;div class=&quot;openrss&quot;&gt;&lt;script type=&quot;text/javascript&quot; src=&quot;{{ js_uri }}&quot; charset=&quot;utf-8&quot; &gt;&lt;/script&gt;&lt;/div&gt;</div>
-
-  <h3>フィード：<small style="color:red">↓この部分があなたのサイトに埋め込まれます</small></h3>
-  <div class="openrss"><script type="text/javascript" src="{{ local_js_uri|safe }}" charset="utf-8"></script></div>
-  <hr>
-  <h3>オプション：</h3>
-  <p>好みにあわせて形式を変更することができます。
-  </p>
-  <form id="form" name="form" method="get" action="">
+    <h3>フィード：<small style="color:red">↓この部分があなたのサイトに埋め込まれます</small></h3>
+    <div class="openrss"><script type="text/javascript" src="{{ local_js_uri|safe }}" charset="utf-8"></script></div>
+    <hr>
+    <h3>オプション：</h3>
+    <p>好みにあわせて形式を変更することができます。
+    </p>
+    <form id="form" name="form" method="get" action="">
       <p>日付：
-          <select name="tm" id="tm" onchange="document.form.submit();">
-              <option value="n">表示しない</option>
-              <option value="s">（月/日）</option>
-              <option value="m">（年/月/日）</option>
-              <option value="l">年/月/日 時:分</option>
-            </select>
+        <select name="tm" id="tm" onchange="document.form.submit();">
+          <option value="n">表示しない</option>
+          <option value="s">（月/日）</option>
+          <option value="m">（年/月/日）</option>
+          <option value="l">年/月/日 時:分</option>
+        </select>
       </p>
       <p>スタイル：
-          <select name="cs" id="cs" onchange="document.form.submit();">
-              <option value="def">貼り付け先にあわせる</option>
-              <option value="rose">ローズ</option>
-              <option value="ocean">オーシャンブルー</option>
-              <option value="japan">和風</option>
-            </select>
+        <select name="cs" id="cs" onchange="document.form.submit();">
+          <option value="def">貼り付け先にあわせる</option>
+          <option value="rose">ローズ</option>
+          <option value="ocean">オーシャンブルー</option>
+          <option value="japan">和風</option>
+        </select>
         <a href="./custom">さらにカスタマイズ</a>
       </p>
       <p>表示数：
-          <select name="mc" id="mc" onchange="document.form.submit();">
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-              <option value="9">9</option>
-              <option value="10">10</option>
-              <option value="11">11</option>
-              <option value="12">12</option>
-              <option value="13">13</option>
-              <option value="14">14</option>
-              <option value="15">15</option>
-            </select>
-      個</p>
+        <select name="mc" id="mc" onchange="document.form.submit();">
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="10">10</option>
+          <option value="11">11</option>
+          <option value="12">12</option>
+          <option value="13">13</option>
+          <option value="14">14</option>
+          <option value="15">15</option>
+        </select>
+        個
+      </p>
       <p>表示順序：
-          <select name="st" id="st" onchange="document.form.submit();">
-              <option value="d">日記式（最新の記事を上から順に表示）</option>
-              <option value="s">スケジュール式（今後の予定を上から順に表示）</option>
-          </select>
+        <select name="st" id="st" onchange="document.form.submit();">
+          <option value="d">日記式（最新の記事を上から順に表示）</option>
+          <option value="s">スケジュール式（今後の予定を上から順に表示）</option>
+        </select>
       </p>
       <p>
-          <input name="uri" type="hidden" id="uri" value="{{ rss_uri }}" />
+        <input name="uri" type="hidden" id="uri" value="{{ rss_uri }}" />
       </p>
     </form>
-
-</div>
-<div class="footer">
-  <p>{{ SITE_NAME }}  &copy;
-  <a href="http://rakusai.org">Isshu Rakusai</a>
-  </p>
-  <p style="color:#666">Tomato Feedは、クラウドアプリケーションプラットフォーム
-  <a href="https://cloud.google.com/appengine/">Google App Engine</a>上で動作しています。<br />
-  Googleのクラウド技術により非常に安定して動作します。
-  </p>
-</div>
+  </div>
+  <div class="footer">
+    <p>{{ SITE_NAME }}  &copy;
+      <a href="http://rakusai.org">Isshu Rakusai</a>
+    </p>
+    <p style="color:#666">Tomato Feedは、クラウドアプリケーションプラットフォーム
+      <a href="https://cloud.google.com/appengine/">Google App Engine</a>上で動作しています。<br />
+      Googleのクラウド技術により非常に安定して動作します。
+    </p>
+  </div>
 </body>
 </html>
