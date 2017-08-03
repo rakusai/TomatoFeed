@@ -181,7 +181,7 @@ class Jsout(webapp.RequestHandler):
     else:
       #existing feed
       if feed.cache_expired():
-        taskqueue.add(url='/fetch', params={'uri': uri}, method = 'GET')
+        taskqueue.add(url = '/fetch', params = {'uri': uri}, method = 'GET')
 
     if not feed or feed.error:
       self.response.out.write('document.write('<ul><li>Error: ' + feed.error + '</li></ul>')')
