@@ -54,8 +54,8 @@ class Feed():
     if not list:
       list = []
     if not self in list:
-      list.insert(0,self)
-      memcache.set('rlist',list[0:30],60*60*24)
+      list.insert(0, self)
+      memcache.set('rlist', list[0:30], 60*60*24)
 
   @staticmethod
   def get_list():
@@ -117,10 +117,10 @@ class Option(object):
   tm = 's'
 
   def __init__(self, request):
-    self.cs = request.get('cs',self.cs)
-    self.mc = request.get('mc',self.mc)
-    self.st = request.get('st',self.st)
-    self.tm = request.get('tm',self.tm)
+    self.cs = request.get('cs', self.cs)
+    self.mc = request.get('mc', self.mc)
+    self.st = request.get('st', self.st)
+    self.tm = request.get('tm', self.tm)
     if not self.mc.isdigit():
       self.mc = '5'
 
@@ -212,7 +212,7 @@ class Jsout(webapp.RequestHandler):
         parsed_time = datetime.datetime.now()
       entry.updated_time = parsed_time.strftime('%Y/%m/%d %H:%M:%s')
       entry.updated_format = get_updated_format(parsed_time)
-      entry.title = re.sub('[\r\n]',' ',entry.title)
+      entry.title = re.sub('[\r\n]', ' ', entry.title)
 
     if option.st == 's':
       feed.entries.sort(sorter)
