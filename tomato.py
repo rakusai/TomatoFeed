@@ -184,7 +184,7 @@ class Jsout(webapp.RequestHandler):
         taskqueue.add(url = '/fetch', params = {'uri': uri}, method = 'GET')
 
     if not feed or feed.error:
-      self.response.out.write('document.write('<ul><li>Error: ' + feed.error + '</li></ul>')')
+      self.response.out.write("document.write('<ul><li>Error: " + feed.error + "</li></ul>')")
       return
 
     option = Option(self.request)
