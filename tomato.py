@@ -149,13 +149,14 @@ class FeedPage(webapp.RequestHandler):
     feeduri = self.request.get('uri')
 
     option = Option(self.request)
+    protocol = 'https' if os.environ['HTTPS'] == 'on' else 'http'
 
     template_values = {
       'SITE_NAME': 'Tomato Feed',
       'rss_uri': feeduri,
       'option': option,
       'local_js_uri': '/jsout.php?' + os.environ['QUERY_STRING'],
-      'js_uri': 'http://' + os.environ['SERVER_NAME'] + '/jsout.php?' + os.environ['QUERY_STRING'],
+      'js_uri': protocol + '://' + os.environ['SERVER_NAME'] + '/jsout.php?' + os.environ['QUERY_STRING'],
     }
     path = os.path.join(os.path.dirname(__file__), 'views/detail.html')
     self.response.out.write(template.render(path, template_values))
@@ -220,9 +221,11 @@ class Jsout(webapp.RequestHandler):
     if option.mc > 0:
       feed.entries = feed.entries[0:int(option.mc)]
 
+    protocol = 'https' if os.environ['HTTPS'] == 'on' else 'http'
+
     template_values = {
       'SITE_NAME': 'Tomato Feed',
-      'APP_URI': 'http://' + os.environ['HTTP_HOST'],
+      'APP_URI': protocol + '://' + os.environ['HTTP_HOST'],
       'rss_uri': uri,
       'option': option,
       'entries': feed.entries,
